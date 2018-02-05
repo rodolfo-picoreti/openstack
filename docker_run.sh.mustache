@@ -1,0 +1,12 @@
+#!/bin/bash
+
+{{before}}
+
+sudo docker pull {{image}}
+
+sudo docker run -d --restart=always --network=host \
+  {{#workdir}}  -w    {{.}}   {{/workdir}} \
+  {{#volume}}   -v    {{.}}   {{/volume}}  \
+  {{#env}}      -e    {{.}}   {{/env}}     \
+  {{image}}                                \
+  {{#args}}           {{.}}   {{/args}}
