@@ -1,0 +1,28 @@
+{
+  "prod": {
+    "docker_registry": "?",
+    "zipkin_host": "?",
+    "zipkin_port": 9411,
+    "camera_ips": [
+      "10.61.100.2",
+      "10.61.100.3",
+      "10.61.101.2",
+      "10.61.101.3"
+    ],
+    "base_image": "docker-base",
+    "key_value_name": "ninja"
+  },
+  "dev": {
+    "docker_registry": "10.51.0.39:5000",
+    "zipkin_host": "10.51.0.39",
+    "zipkin_port": 9411,
+    "camera_ips": [
+      "10.51.100.2",
+      "10.51.100.3",
+      "10.51.101.2",
+      "10.51.101.3"
+    ],
+    "base_image": "docker-base",
+    "key_value_name": "ninja"
+  }
+}

@@ -3,18 +3,15 @@ import os
 import shade
 import json
 
-docker_registry = '10.51.0.39:5000'
-zipkin_host = '10.51.0.39'
-zipkin_port = 9411
-camera_ips = ['10.51.100.2', '10.51.100.3', '10.51.101.2', '10.51.101.3']
-base_image = 'docker-base'
-key_value_name = 'ninja'
+cloud_name = 'dev'
+config = json.load(open('config.json'))[cloud_name]
+print json.dumps(config, indent=4)
 
 
 def docker_run(image, args=[], workdir='', volume='', env=[], before=''):
     template = open('./docker_run.sh.mustache', 'r').read()
     return pystache.render(template, {
-        'image': '{}/{}'.format(docker_registry, image),
+        'image': '{}/{}'.format(config['docker_registry'], image),
         'args': args,
         'workdir': workdir,
         'before': before,
@@ -29,13 +26,13 @@ def create_server(cloud, name, userdata, wait=False):
         print '[INFO] Creating server {}'.format(name)
         server = cloud.create_server(
             name=name,
-            image=base_image,
+            image=config['base_image'],
             flavor=cloud.get_flavor('m1.small'),
-            key_name=key_value_name,
+            key_name=config['key_value_name'],
             userdata=userdata,
         )
     else:
-        print '[INFO] Server {} already running'.format(name)
+        print '[INFO] Server {} already running @{}'.format(name, server.public_v4)
 
     if wait == True:
         cloud.wait_for_server(server)
@@ -43,27 +40,27 @@ def create_server(cloud, name, userdata, wait=False):
     return server
 
 
-shade.simple_logging(debug=False)
-cloud = shade.openstack_cloud(cloud='prod')
+shade.simple_logging(debug=True)
+cloud = shade.openstack_cloud(cloud=cloud_name)
 
 # RabbitMQ
 server = create_server(
     cloud,
     name='RabbitMQ',
     userdata=docker_run(image='is-rabbitmq:3'),
-    wait = True,
+    wait=True,
 )
 broker_uri = 'amqp://{}'.format(server.public_v4)
 
 # Camera Gateways
-for n, camera in enumerate(camera_ips):
+for n, camera in enumerate(config['camera_ips']):
     create_server(
         cloud,
         name='CameraGateway.{}'.format(n),
         userdata=docker_run(
             image='camera-gateway:1.1',
             args=["./service", "-i", n, "-c", camera, "-u", broker_uri,
-                  "-s", "1400", "-d", "6000", "-z", zipkin_host, "-p", zipkin_port],
+                  "-s", "1400", "-d", "6000", "-z", config['zipkin_host'], "-p", config['zipkin_port']]
         ),
     )
 
@@ -87,7 +84,7 @@ for n in xrange(4):
             volume="`pwd`/is-aruco-calib:/opt",
             image='aruco:1',
             args=["./service", "-u", broker_uri, "-l", 0.3, "-d", 0, "-c", "/opt",
-                  "-z", zipkin_host, "-p", zipkin_port],
+                  "-z", config['zipkin_host'], "-p", config['zipkin_port']]
         )
     )
 
@@ -108,6 +105,6 @@ create_server(
     userdata=docker_run(
         image='robot-controller:1',
         args=["./service", "-u", broker_uri,
-              "-z", zipkin_host, "-P", zipkin_port],
+              "-z", config['zipkin_host'], "-P", config['zipkin_port']]
     )
 )

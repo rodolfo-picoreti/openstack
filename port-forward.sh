@@ -1,5 +1,0 @@
-#!/bin/bash
-
-HOST=${OPENSTACK_HOST:-10.60.0.3}
-
-ssh -L 8080:$HOST:80 -L 5000:$HOST:5000 -L 9696:$HOST:9696 -L 8778:$HOST:8778 -L 9292:$HOST:9292 -L 8774:$HOST:8774 root@nerds.lprm.inf.ufes.br -p2222
